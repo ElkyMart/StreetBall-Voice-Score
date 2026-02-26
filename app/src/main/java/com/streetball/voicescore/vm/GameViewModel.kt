@@ -3,6 +3,8 @@ package com.streetball.voicescore.vm
 import android.app.Application
 import android.os.SystemClock
 import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.LANG_MISSING_DATA
+import android.speech.tts.TextToSpeech.LANG_NOT_SUPPORTED
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.streetball.voicescore.model.GameState
@@ -50,9 +52,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     init {
         textToSpeech = TextToSpeech(getApplication()) { status ->
             ttsReady = status == TextToSpeech.SUCCESS
-            if (ttsReady) {
-                textToSpeech?.language = Locale.US
+            if (!ttsReady) {
+                _uiState.update { it.copy(ttsAvailable = false) }
+                return@TextToSpeech
             }
+
+            val result = textToSpeech?.setLanguage(Locale.US) ?: LANG_NOT_SUPPORTED
+            val languageReady = result != LANG_MISSING_DATA && result != LANG_NOT_SUPPORTED
+            ttsReady = languageReady
+            _uiState.update { it.copy(ttsAvailable = languageReady) }
         }
     }
 
