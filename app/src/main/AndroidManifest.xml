@@ -7,7 +7,7 @@
     <application
         android:allowBackup="true"
         android:icon="@android:drawable/ic_btn_speak_now"
-        android:label="StreetBall Voice Score"
+        android:label="@string/app_name"
         android:roundIcon="@android:drawable/ic_btn_speak_now"
         android:supportsRtl="true"
         android:theme="@style/Theme.StreetBallVoiceScore">

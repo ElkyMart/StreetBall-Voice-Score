@@ -43,10 +43,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.streetball.voicescore.R
 import com.streetball.voicescore.model.Team
 import com.streetball.voicescore.ui.theme.AppBackground
 import com.streetball.voicescore.ui.theme.AppSurface
@@ -85,16 +87,20 @@ fun GameScreen(
                 IconButton(onClick = onOpenSettings) {
                     Icon(
                         imageVector = Icons.Rounded.Settings,
-                        contentDescription = "Settings",
+                        contentDescription = stringResource(R.string.settings_icon),
                         tint = Color.White,
                     )
                 }
             }
 
             if (state.gamePointTeam != null && state.winner == null) {
-                val teamLabel = if (state.gamePointTeam == Team.A) "TEAM A" else "TEAM B"
+                val teamLabel = if (state.gamePointTeam == Team.A) {
+                    stringResource(R.string.team_letter_a)
+                } else {
+                    stringResource(R.string.team_letter_b)
+                }
                 Text(
-                    text = "GAME POINT · $teamLabel",
+                    text = stringResource(R.string.game_point_team, teamLabel),
                     color = SubtleText,
                     style = MaterialTheme.typography.labelLarge,
                 )
@@ -140,7 +146,7 @@ fun GameScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedButton(onClick = onUndo) {
-                    Text(text = "Undo")
+                    Text(text = stringResource(R.string.undo))
                 }
                 HoldToResetButton(onReset = onReset)
             }
@@ -170,12 +176,12 @@ fun GameScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = "Microphone permission is required for voice scoring.",
+                        text = stringResource(R.string.mic_permission_required),
                         textAlign = TextAlign.Center,
                         color = Color.White,
                     )
                     Button(onClick = onRequestMicPermission) {
-                        Text(text = "Allow Microphone")
+                        Text(text = stringResource(R.string.allow_microphone))
                     }
                 }
             }
@@ -250,8 +256,13 @@ private fun TeamControls(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        val displayTeam = if (teamLabel == "A") {
+            stringResource(R.string.team_letter_a)
+        } else {
+            stringResource(R.string.team_letter_b)
+        }
         Text(
-            text = "Team $teamLabel",
+            text = stringResource(R.string.team_label, displayTeam),
             color = SubtleText,
             style = MaterialTheme.typography.labelLarge,
         )
@@ -284,12 +295,12 @@ private fun ListeningIndicator(isListening: Boolean) {
     ) {
         Icon(
             imageVector = if (isListening) Icons.Rounded.Mic else Icons.Rounded.MicOff,
-            contentDescription = "Mic State",
+            contentDescription = stringResource(R.string.mic_state),
             tint = if (isListening) ScoreHighlight else SubtleText,
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = if (isListening) "Listening..." else "Mic paused",
+            text = if (isListening) stringResource(R.string.listening) else stringResource(R.string.mic_paused),
             color = SubtleText,
             style = MaterialTheme.typography.titleMedium,
         )
@@ -323,7 +334,7 @@ private fun HoldToResetButton(onReset: () -> Unit) {
         shape = RoundedCornerShape(12.dp),
     ) {
         Text(
-            text = if (pressed) "Hold..." else "Reset",
+            text = if (pressed) stringResource(R.string.hold) else stringResource(R.string.reset),
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
             color = Color.White,
         )

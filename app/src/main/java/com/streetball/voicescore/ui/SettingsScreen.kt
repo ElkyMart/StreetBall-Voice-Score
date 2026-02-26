@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -17,10 +17,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.streetball.voicescore.R
 
 @Composable
 fun SettingsScreen(
@@ -46,10 +48,13 @@ fun SettingsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.Rounded.ArrowBack, contentDescription = "Back")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                )
             }
             Text(
-                text = "Settings",
+                text = stringResource(R.string.settings),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
@@ -58,7 +63,7 @@ fun SettingsScreen(
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = "Target Score",
+                text = stringResource(R.string.target_score),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -75,19 +80,19 @@ fun SettingsScreen(
         }
 
         ToggleRow(
-            title = "Win by 2",
+            title = stringResource(R.string.win_by_two),
             checked = winByTwo,
             onCheckedChange = onWinByTwoChanged,
         )
 
         ToggleRow(
-            title = "3-point mode",
+            title = stringResource(R.string.three_point_mode),
             checked = threePointMode,
             onCheckedChange = onThreePointModeChanged,
         )
 
         ToggleRow(
-            title = "Loud mode",
+            title = stringResource(R.string.loud_mode),
             checked = loudMode,
             onCheckedChange = onLoudModeChanged,
         )

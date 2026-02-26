@@ -19,10 +19,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.streetball.voicescore.R
 import com.streetball.voicescore.model.Team
 import kotlin.random.Random
 
@@ -41,6 +43,12 @@ fun ConfettiOverlay(
     scoreB: Int,
     onTapToReset: () -> Unit,
 ) {
+    val winnerLabel = if (winner == Team.A) {
+        stringResource(R.string.team_letter_a)
+    } else {
+        stringResource(R.string.team_letter_b)
+    }
+
     val random = remember { Random(42) }
     val particles = remember {
         List(120) {
@@ -90,7 +98,10 @@ fun ConfettiOverlay(
         }
 
         Text(
-            text = "FINAL SCORE\n$scoreA - $scoreB\n\nWINNER: TEAM ${if (winner == Team.A) "A" else "B"}\n\nTap to reset",
+            text = "${stringResource(R.string.final_score)}\n" +
+                "$scoreA - $scoreB\n\n" +
+                "${stringResource(R.string.winner_team, winnerLabel)}\n\n" +
+                stringResource(R.string.tap_to_reset),
             modifier = Modifier
                 .align(Alignment.Center)
                 .wrapContentSize()

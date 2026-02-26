@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">StreetBall Voice Score</string>
+    <string name="settings">Ajustes</string>
+    <string name="back">Volver</string>
+    <string name="settings_icon">Ajustes</string>
+    <string name="target_score">Puntaje objetivo</string>
+    <string name="win_by_two">Ganar por 2</string>
+    <string name="three_point_mode">Modo de 3 puntos</string>
+    <string name="loud_mode">Modo en voz alta</string>
+    <string name="loud_mode_tts_unavailable">El modo en voz alta necesita datos de Texto a Voz en este dispositivo.</string>
+
+    <string name="team_letter_a">A</string>
+    <string name="team_letter_b">B</string>
+    <string name="team_label">Equipo %1$s</string>
+    <string name="game_point_team">PUNTO DE PARTIDO · EQUIPO %1$s</string>
+
+    <string name="undo">Deshacer</string>
+    <string name="undo_a11y">Deshacer el último cambio de puntaje</string>
+    <string name="reset">Reiniciar</string>
+    <string name="hold">Mantener...</string>
+    <string name="hold_reset_a11y">Mantén presionado dos segundos para reiniciar el juego</string>
+
+    <string name="add_point_team">Sumar un punto al equipo %1$s</string>
+    <string name="remove_point_team">Restar un punto al equipo %1$s</string>
+
+    <string name="listening">Escuchando...</string>
+    <string name="mic_paused">Micrófono en pausa</string>
+    <string name="mic_state">Estado del micrófono</string>
+
+    <string name="mic_permission_required">Se requiere permiso de micrófono para el puntaje por voz.</string>
+    <string name="allow_microphone">Permitir micrófono</string>
+
+    <string name="final_score">PUNTAJE FINAL</string>
+    <string name="winner_team">GANADOR: EQUIPO %1$s</string>
+    <string name="tap_to_reset">Toca para reiniciar</string>
+</resources>
