@@ -24,6 +24,7 @@ import java.util.Locale
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val maxHistoryEvents = 500
     private val parser = NumberWordParser()
     private val validationEngine = ScoreValidationEngine()
 
@@ -264,7 +265,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             teamAScore = newScoreA,
             teamBScore = newScoreB,
             lastUpdateSource = source,
-            history = oldState.history + event,
+            history = (oldState.history + event).takeLast(maxHistoryEvents),
         )
 
         val (resolvedState, winner, gamePointTeam) = resolveGameMeta(updated)
