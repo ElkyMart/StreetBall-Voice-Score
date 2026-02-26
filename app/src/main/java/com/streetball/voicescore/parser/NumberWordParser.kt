@@ -66,7 +66,7 @@ class NumberWordParser {
 
             val numericValue = token.toIntOrNull()
             if (numericValue != null) {
-                if (numericValue in 0..99) {
+                if (numericValue in 0..21) {
                     detectedNumbers += numericValue
                 }
                 index += 1
