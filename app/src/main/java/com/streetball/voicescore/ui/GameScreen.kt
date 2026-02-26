@@ -43,6 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -140,7 +142,10 @@ fun GameScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedButton(onClick = onUndo) {
-                    Text(text = "Undo")
+                    Text(
+                        text = "Undo",
+                        modifier = Modifier.semantics { contentDescription = "Undo last score change" },
+                    )
                 }
                 HoldToResetButton(onReset = onReset)
             }
@@ -262,7 +267,11 @@ private fun TeamControls(
                 colors = ButtonDefaults.buttonColors(containerColor = AppSurface),
                 modifier = Modifier.size(58.dp),
             ) {
-                Text(text = "+", fontSize = 24.sp)
+                Text(
+                    text = "+",
+                    fontSize = 24.sp,
+                    modifier = Modifier.semantics { contentDescription = "Add one point to team $teamLabel" },
+                )
             }
 
             Button(
@@ -270,7 +279,11 @@ private fun TeamControls(
                 colors = ButtonDefaults.buttonColors(containerColor = AppSurface),
                 modifier = Modifier.size(58.dp),
             ) {
-                Text(text = "-", fontSize = 24.sp)
+                Text(
+                    text = "-",
+                    fontSize = 24.sp,
+                    modifier = Modifier.semantics { contentDescription = "Remove one point from team $teamLabel" },
+                )
             }
         }
     }
@@ -318,7 +331,7 @@ private fun HoldToResetButton(onReset: () -> Unit) {
                 waitForUpOrCancellation()
                 pressed = false
             }
-        },
+        }.semantics { contentDescription = "Hold two seconds to reset game" },
         color = AppSurface,
         shape = RoundedCornerShape(12.dp),
     ) {
