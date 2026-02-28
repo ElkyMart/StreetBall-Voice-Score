@@ -24,6 +24,13 @@ import java.util.Locale
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
 
+    companion object {
+        private const val VOICE_CONFIDENCE_THRESHOLD = 0.55f
+        private const val VOICE_DEBOUNCE_MS = 3_000L
+        private const val SCORE_HIGHLIGHT_MS = 700L
+        private const val INVALID_FLASH_MS = 180L
+    }
+
     private val parser = NumberWordParser()
     private val validationEngine = ScoreValidationEngine()
 
@@ -212,8 +219,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         if (!stateSnapshot.micPermissionGranted || !gameState.gameActive) return
 
-        val confidenceThreshold = 0.55f
-        if (confidence < confidenceThreshold) return
+        if (confidence < VOICE_CONFIDENCE_THRESHOLD) return
 
         val parsedScores = parser.extractTwoScores(text) ?: return
         val (newScoreA, newScoreB) = parsedScores
@@ -222,7 +228,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (newScoreA == gameState.teamAScore && newScoreB == gameState.teamBScore) return
 
         val now = SystemClock.elapsedRealtime()
-        if (lastAcceptedVoiceScore == parsedScores && now - lastAcceptedVoiceTimeMs < 3_000L) {
+        if (lastAcceptedVoiceScore == parsedScores && now - lastAcceptedVoiceTimeMs < VOICE_DEBOUNCE_MS) {
             return
         }
 
@@ -307,7 +313,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (team == null) return
 
         highlightJob = viewModelScope.launch {
-            delay(700L)
+            delay(SCORE_HIGHLIGHT_MS)
             _uiState.update { current ->
                 if (current.highlightTeam == team) {
                     current.copy(highlightTeam = null)
@@ -328,7 +334,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                     lastError = reason,
                 )
             }
-            delay(180L)
+            delay(INVALID_FLASH_MS)
             _uiState.update { it.copy(invalidFlash = false) }
         }
     }
