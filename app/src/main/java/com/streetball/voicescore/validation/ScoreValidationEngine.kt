@@ -39,7 +39,8 @@ class ScoreValidationEngine {
             return ValidationResult(isValid = false, reason = "Both teams cannot score at once")
         }
 
-        val maxJump = if (current.threePointMode) 3 else 2
+        // Streetball possessions can produce 1, 2, or 3-point score updates.
+        val maxJump = 3
         if (deltaA > maxJump || deltaB > maxJump) {
             return ValidationResult(isValid = false, reason = "Jump too large")
         }

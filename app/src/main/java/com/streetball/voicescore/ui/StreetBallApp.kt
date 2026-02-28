@@ -5,10 +5,12 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.streetball.voicescore.ui.theme.StreetBallVoiceScoreTheme
@@ -17,6 +19,7 @@ import com.streetball.voicescore.vm.GameViewModel
 @Composable
 fun StreetBallApp(gameViewModel: GameViewModel = viewModel()) {
     val context = LocalContext.current
+    val rootView = LocalView.current
     val uiState by gameViewModel.uiState.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -37,28 +40,49 @@ fun StreetBallApp(gameViewModel: GameViewModel = viewModel()) {
         }
     }
 
+    DisposableEffect(rootView, uiState.keepScreenAwake) {
+        rootView.keepScreenOn = uiState.keepScreenAwake
+        onDispose {
+            rootView.keepScreenOn = false
+        }
+    }
+
     StreetBallVoiceScoreTheme {
         if (uiState.showSettings) {
             SettingsScreen(
                 targetScore = uiState.gameState.targetScore,
+                teamAName = uiState.gameState.teamAName,
+                teamBName = uiState.gameState.teamBName,
                 winByTwo = uiState.gameState.winByTwo,
-                threePointMode = uiState.gameState.threePointMode,
                 loudMode = uiState.loudMode,
+                keepScreenAwake = uiState.keepScreenAwake,
+                videoCaptureMode = uiState.videoCaptureMode,
+                hasSavedPreset = uiState.hasSavedPreset,
+                presetStatusMessage = uiState.presetStatusMessage,
+                exportDebugMessage = uiState.exportDebugMessage,
                 onBack = gameViewModel::closeSettings,
+                onTeamANameChanged = gameViewModel::setTeamAName,
+                onTeamBNameChanged = gameViewModel::setTeamBName,
                 onTargetScoreSelected = gameViewModel::setTargetScore,
                 onWinByTwoChanged = gameViewModel::setWinByTwo,
-                onThreePointModeChanged = gameViewModel::setThreePointMode,
                 onLoudModeChanged = gameViewModel::setLoudMode,
+                onKeepScreenAwakeChanged = gameViewModel::setKeepScreenAwake,
+                onVideoCaptureModeChanged = gameViewModel::setVideoCaptureMode,
+                onSavePreset = gameViewModel::saveCurrentAsPreset,
+                onLoadPreset = gameViewModel::applySavedPreset,
+                onExportDebugTimeline = gameViewModel::exportDebugTimelineFiles,
             )
         } else {
             GameScreen(
                 state = uiState,
-                onTeamAPlus = gameViewModel::incrementTeamA,
+                onTeamAAdd = gameViewModel::incrementTeamABy,
                 onTeamAMinus = gameViewModel::decrementTeamA,
-                onTeamBPlus = gameViewModel::incrementTeamB,
+                onTeamBAdd = gameViewModel::incrementTeamBBy,
                 onTeamBMinus = gameViewModel::decrementTeamB,
                 onUndo = gameViewModel::undo,
                 onReset = gameViewModel::resetGame,
+                onApplyPreset = gameViewModel::applySavedPreset,
+                isVideoCaptureMode = uiState.videoCaptureMode,
                 onOpenSettings = gameViewModel::openSettings,
                 onRequestMicPermission = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
             )

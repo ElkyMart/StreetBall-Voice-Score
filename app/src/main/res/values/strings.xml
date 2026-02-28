@@ -6,9 +6,16 @@
     <string name="settings_icon">Settings</string>
     <string name="target_score">Target Score</string>
     <string name="win_by_two">Win by 2</string>
-    <string name="three_point_mode">3-point mode</string>
     <string name="loud_mode">Loud mode</string>
-    <string name="loud_mode_tts_unavailable">Loud mode needs Text-to-Speech data on this device.</string>
+    <string name="keep_screen_awake">Keep screen awake</string>
+    <string name="video_capture_mode">Video capture mode</string>
+    <string name="video_capture_mode_active">VIDEO CAPTURE MODE</string>
+    <string name="team_names">Team Names</string>
+    <string name="team_a_name">Team A name</string>
+    <string name="team_b_name">Team B name</string>
+    <string name="match_preset">Match Preset</string>
+    <string name="save_preset">Save Preset</string>
+    <string name="load_preset">Load Preset</string>
 
     <string name="team_letter_a">A</string>
     <string name="team_letter_b">B</string>
@@ -21,15 +28,22 @@
     <string name="hold">Hold...</string>
     <string name="hold_reset_a11y">Hold two seconds to reset game</string>
 
-    <string name="add_point_team">Add one point to team %1$s</string>
-    <string name="remove_point_team">Remove one point from team %1$s</string>
+    <string name="add_points_team">Add %1$d point(s) to team %2$s</string>
+    <string name="remove_points_team">Remove %1$d point(s) from team %2$s</string>
 
     <string name="listening">Listening...</string>
     <string name="mic_paused">Mic paused</string>
     <string name="mic_state">Mic State</string>
+    <string name="voice_heard_label">Heard</string>
+    <string name="voice_interpreted_label">Interpreted</string>
+    <string name="voice_none_value">—</string>
+    <string name="voice_debug_title">VOICE DEBUG</string>
+    <string name="voice_debug_empty">No transcripts yet</string>
 
     <string name="mic_permission_required">Microphone permission is required for voice scoring.</string>
     <string name="allow_microphone">Allow Microphone</string>
+    <string name="export_debug_timeline">Export Debug Timeline</string>
+    <string name="export_debug_timeline_hint">Creates CSV + SRT + video notes for post-game overlay.</string>
 
     <string name="final_score">FINAL SCORE</string>
     <string name="winner_team">WINNER: TEAM %1$s</string>

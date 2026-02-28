@@ -39,14 +39,16 @@ private data class ConfettiParticle(
 @Composable
 fun ConfettiOverlay(
     winner: Team,
+    teamAName: String,
+    teamBName: String,
     scoreA: Int,
     scoreB: Int,
     onTapToReset: () -> Unit,
 ) {
     val winnerLabel = if (winner == Team.A) {
-        stringResource(R.string.team_letter_a)
+        teamAName
     } else {
-        stringResource(R.string.team_letter_b)
+        teamBName
     }
 
     val random = remember { Random(42) }

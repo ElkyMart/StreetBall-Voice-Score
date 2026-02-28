@@ -29,6 +29,7 @@ class VoiceRecognitionManager(
     private var recognizer: SpeechRecognizer? = null
     private var shouldListen: Boolean = false
     private var restartJob: Job? = null
+    private var isListeningSessionActive: Boolean = false
 
     fun start() {
         if (shouldListen) return
@@ -51,7 +52,8 @@ class VoiceRecognitionManager(
 
         mainHandler.post {
             onListeningChanged(false)
-            recognizer?.cancel()
+            isListeningSessionActive = false
+            recognizer?.stopListening()
         }
     }
 
@@ -69,6 +71,7 @@ class VoiceRecognitionManager(
         recognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
             setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
+                    isListeningSessionActive = true
                     onListeningChanged(true)
                 }
 
@@ -79,10 +82,12 @@ class VoiceRecognitionManager(
                 override fun onBufferReceived(buffer: ByteArray?) = Unit
 
                 override fun onEndOfSpeech() {
+                    isListeningSessionActive = false
                     onListeningChanged(false)
                 }
 
                 override fun onError(error: Int) {
+                    isListeningSessionActive = false
                     onListeningChanged(false)
                     onErrorMessage(errorToText(error))
                     if (shouldListen) {
@@ -91,15 +96,17 @@ class VoiceRecognitionManager(
                 }
 
                 override fun onResults(results: Bundle?) {
+                    isListeningSessionActive = false
                     onListeningChanged(false)
                     dispatchResults(results, defaultConfidence = 0.7f)
                     if (shouldListen) {
-                        startListeningInternal(delayMs = 120L)
+                        startListeningInternal(delayMs = 1_000L)
                     }
                 }
 
                 override fun onPartialResults(partialResults: Bundle?) {
-                    dispatchResults(partialResults, defaultConfidence = 0.6f)
+                    // Ignore partial hypotheses for command execution; they often contain incomplete fragments.
+                    // Final results are handled in onResults.
                 }
 
                 override fun onEvent(eventType: Int, params: Bundle?) = Unit
@@ -112,10 +119,10 @@ class VoiceRecognitionManager(
         if (items.isEmpty()) return
 
         val confidence = bundle.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
-        items.forEachIndexed { index, text ->
-            val itemConfidence = confidence?.getOrNull(index)?.takeIf { it >= 0f } ?: defaultConfidence
-            onTranscript(text, itemConfidence)
-        }
+        val bestText = items.firstOrNull()?.trim().orEmpty()
+        if (bestText.isEmpty()) return
+        val bestConfidence = confidence?.getOrNull(0)?.takeIf { it >= 0f } ?: defaultConfidence
+        onTranscript(bestText, bestConfidence)
     }
 
     private fun startListeningInternal(delayMs: Long) {
@@ -127,7 +134,7 @@ class VoiceRecognitionManager(
             mainHandler.post {
                 if (!shouldListen) return@post
                 ensureRecognizer()
-                recognizer?.cancel()
+                if (isListeningSessionActive) return@post
                 recognizer?.startListening(buildRecognizerIntent())
             }
         }
@@ -138,18 +145,22 @@ class VoiceRecognitionManager(
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 450L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 350L)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            putExtra("android.speech.extra.DICTATION_MODE", true)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 2_400L)
+            // Longer silence windows reduce rapid restart cycles (and device earcon noise).
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2_300L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1_600L)
         }
     }
 
     private fun restartDelayForError(error: Int): Long {
         return when (error) {
-            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> 250L
+            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> 450L
             SpeechRecognizer.ERROR_NO_MATCH,
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> 120L
+            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> 1_000L
 
             else -> 350L
         }

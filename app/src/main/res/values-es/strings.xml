@@ -6,9 +6,16 @@
     <string name="settings_icon">Ajustes</string>
     <string name="target_score">Puntaje objetivo</string>
     <string name="win_by_two">Ganar por 2</string>
-    <string name="three_point_mode">Modo de 3 puntos</string>
     <string name="loud_mode">Modo en voz alta</string>
-    <string name="loud_mode_tts_unavailable">El modo en voz alta necesita datos de Texto a Voz en este dispositivo.</string>
+    <string name="keep_screen_awake">Mantener pantalla activa</string>
+    <string name="video_capture_mode">Modo de captura de video</string>
+    <string name="video_capture_mode_active">MODO CAPTURA DE VIDEO</string>
+    <string name="team_names">Nombres de equipos</string>
+    <string name="team_a_name">Nombre del equipo A</string>
+    <string name="team_b_name">Nombre del equipo B</string>
+    <string name="match_preset">Preajuste de partido</string>
+    <string name="save_preset">Guardar preajuste</string>
+    <string name="load_preset">Cargar preajuste</string>
 
     <string name="team_letter_a">A</string>
     <string name="team_letter_b">B</string>
@@ -21,15 +28,22 @@
     <string name="hold">Mantener...</string>
     <string name="hold_reset_a11y">Mantén presionado dos segundos para reiniciar el juego</string>
 
-    <string name="add_point_team">Sumar un punto al equipo %1$s</string>
-    <string name="remove_point_team">Restar un punto al equipo %1$s</string>
+    <string name="add_points_team">Sumar %1$d punto(s) al equipo %2$s</string>
+    <string name="remove_points_team">Restar %1$d punto(s) al equipo %2$s</string>
 
     <string name="listening">Escuchando...</string>
     <string name="mic_paused">Micrófono en pausa</string>
     <string name="mic_state">Estado del micrófono</string>
+    <string name="voice_heard_label">Escuchado</string>
+    <string name="voice_interpreted_label">Interpretado</string>
+    <string name="voice_none_value">—</string>
+    <string name="voice_debug_title">DEPURACIÓN DE VOZ</string>
+    <string name="voice_debug_empty">Aún no hay transcripciones</string>
 
     <string name="mic_permission_required">Se requiere permiso de micrófono para el puntaje por voz.</string>
     <string name="allow_microphone">Permitir micrófono</string>
+    <string name="export_debug_timeline">Exportar línea de tiempo de depuración</string>
+    <string name="export_debug_timeline_hint">Crea CSV + SRT + notas de video para superposición posterior.</string>
 
     <string name="final_score">PUNTAJE FINAL</string>
     <string name="winner_team">GANADOR: EQUIPO %1$s</string>
