@@ -28,6 +28,7 @@ fun SettingsScreen(
     winByTwo: Boolean,
     threePointMode: Boolean,
     loudMode: Boolean,
+    ttsAvailable: Boolean,
     onBack: () -> Unit,
     onTargetScoreSelected: (Int) -> Unit,
     onWinByTwoChanged: (Boolean) -> Unit,
@@ -91,6 +92,13 @@ fun SettingsScreen(
             checked = loudMode,
             onCheckedChange = onLoudModeChanged,
         )
+
+        if (loudMode && !ttsAvailable) {
+            Text(
+                text = "Loud mode needs Text-to-Speech data on this device.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 
