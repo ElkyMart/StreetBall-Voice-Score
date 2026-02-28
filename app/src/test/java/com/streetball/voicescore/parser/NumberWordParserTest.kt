@@ -9,27 +9,32 @@ class NumberWordParserTest {
     private val parser = NumberWordParser()
 
     @Test
-    fun `extractTwoScores parses plain number words`() {
-        val result = parser.extractTwoScores("six seven")
-
-        assertEquals(6 to 7, result)
+    fun parsesSimpleTwoTwo() {
+        assertEquals(2 to 2, parser.extractTwoScores("two two"))
     }
 
     @Test
-    fun `extractTwoScores ignores filler words`() {
-        val result = parser.extractTwoScores("score is ten nine game point")
-
-        assertEquals(10 to 9, result)
+    fun parsesHomophoneToTo() {
+        assertEquals(2 to 2, parser.extractTwoScores("to to"))
     }
 
     @Test
-    fun `extractTwoScores rejects phrases without exactly two numbers`() {
-        assertNull(parser.extractTwoScores("check ball"))
-        assertNull(parser.extractTwoScores("one two three"))
+    fun parsesMergedTokenTwotwo() {
+        assertEquals(2 to 2, parser.extractTwoScores("twotwo"))
     }
 
     @Test
-    fun `extractTwoScores parses numeric speech`() {
-        assertEquals(10 to 8, parser.extractTwoScores("10 8"))
+    fun parsesCompactDigits() {
+        assertEquals(2 to 2, parser.extractTwoScores("22"))
+    }
+
+    @Test
+    fun parsesFourSingleDigitsAsTwoScores() {
+        assertEquals(20 to 11, parser.extractTwoScores("two zero one one"))
+    }
+
+    @Test
+    fun rejectsSingleDetectedScore() {
+        assertNull(parser.extractTwoScores("twenty one"))
     }
 }
