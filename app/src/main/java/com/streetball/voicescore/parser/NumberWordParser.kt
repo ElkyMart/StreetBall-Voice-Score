@@ -112,7 +112,7 @@ class NumberWordParser {
                     detectedNumbers += compactPair.first
                     detectedNumbers += compactPair.second
                     heuristic = heuristic ?: "split compact digit token"
-                } else if (numericValue in 0..99) {
+                } else if (numericValue in 0..21) {
                     detectedNumbers += numericValue
                 }
                 index += 1
