@@ -1,5 +1,6 @@
 package com.streetball.voicescore.ui
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -46,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -75,9 +78,18 @@ fun GameScreen(
     onReset: () -> Unit,
     onApplyPreset: () -> Unit,
     isVideoCaptureMode: Boolean,
+    showVoiceDebug: Boolean,
+    onToggleVoiceDebug: (Boolean) -> Unit,
     onOpenSettings: () -> Unit,
     onRequestMicPermission: () -> Unit,
 ) {
+    val contentScrollState = rememberScrollState()
+    val showInlineVoiceDebug = showVoiceDebug && !isVideoCaptureMode
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val teamAName = state.gameState.teamAName.ifBlank { stringResource(R.string.team_letter_a) }
+    val teamBName = state.gameState.teamBName.ifBlank { stringResource(R.string.team_letter_b) }
+    val micActive = state.isListening || (state.micPermissionGranted && state.gameState.gameActive)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -85,13 +97,25 @@ fun GameScreen(
             .padding(16.dp),
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(contentScrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                OutlinedButton(onClick = { onToggleVoiceDebug(!showVoiceDebug) }) {
+                    Text(
+                        text = if (showVoiceDebug) {
+                            stringResource(R.string.debug_on)
+                        } else {
+                            stringResource(R.string.debug_off)
+                        },
+                    )
+                }
                 IconButton(onClick = onOpenSettings) {
                     Icon(
                         imageVector = Icons.Rounded.Settings,
@@ -126,71 +150,186 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            ScoreBoard(
-                scoreA = state.gameState.teamAScore,
-                scoreB = state.gameState.teamBScore,
-                teamAName = state.gameState.teamAName.ifBlank { stringResource(R.string.team_letter_a) },
-                teamBName = state.gameState.teamBName.ifBlank { stringResource(R.string.team_letter_b) },
-                highlightTeam = state.highlightTeam,
-                isVideoCaptureMode = isVideoCaptureMode,
-            )
+            if (isLandscape) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        ScoreBoard(
+                            scoreA = state.gameState.teamAScore,
+                            scoreB = state.gameState.teamBScore,
+                            teamAName = teamAName,
+                            teamBName = teamBName,
+                            highlightTeam = state.highlightTeam,
+                            isVideoCaptureMode = isVideoCaptureMode,
+                        )
 
-            Spacer(modifier = Modifier.height(28.dp))
+                        Spacer(modifier = Modifier.height(22.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TeamControls(
-                    teamName = state.gameState.teamAName.ifBlank { stringResource(R.string.team_letter_a) },
-                    onAdd = onTeamAAdd,
-                    onMinus = onTeamAMinus,
-                )
+                        VoiceLoopCard(
+                            isListening = micActive,
+                            lastHeardText = state.lastHeardText,
+                            lastInterpretedText = state.lastInterpretedText,
+                            status = state.voiceLoopStatus,
+                            hint = state.voiceLoopHint,
+                            tone = state.voiceLoopTone,
+                            showDetails = !isVideoCaptureMode,
+                        )
+                    }
 
-                TeamControls(
-                    teamName = state.gameState.teamBName.ifBlank { stringResource(R.string.team_letter_b) },
-                    onAdd = onTeamBAdd,
-                    onMinus = onTeamBMinus,
-                )
-            }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            TeamControls(
+                                teamName = teamAName,
+                                onAdd = onTeamAAdd,
+                                onMinus = onTeamAMinus,
+                            )
 
-            Spacer(modifier = Modifier.height(26.dp))
+                            TeamControls(
+                                teamName = teamBName,
+                                onAdd = onTeamBAdd,
+                                onMinus = onTeamBMinus,
+                            )
+                        }
 
-            VoiceLoopCard(
-                isListening = state.isListening,
-                lastHeardText = state.lastHeardText,
-                lastInterpretedText = state.lastInterpretedText,
-                status = state.voiceLoopStatus,
-                hint = state.voiceLoopHint,
-                tone = state.voiceLoopTone,
-                showDetails = !isVideoCaptureMode,
-            )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        val undoA11y = stringResource(R.string.undo_a11y)
 
-            Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            OutlinedButton(
+                                onClick = onUndo,
+                                modifier = Modifier.semantics {
+                                    contentDescription = undoA11y
+                                },
+                            ) {
+                                Text(text = stringResource(R.string.undo))
+                            }
+                            if (state.hasSavedPreset) {
+                                OutlinedButton(onClick = onApplyPreset) {
+                                    Text(text = stringResource(R.string.load_preset))
+                                }
+                            }
+                            HoldToResetButton(onReset = onReset)
+                        }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedButton(onClick = onUndo) {
-                    Text(text = stringResource(R.string.undo))
-                }
-                if (state.hasSavedPreset) {
-                    OutlinedButton(onClick = onApplyPreset) {
-                        Text(text = stringResource(R.string.load_preset))
+                        if (!state.presetStatusMessage.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = state.presetStatusMessage,
+                                color = SubtleText,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+
+                        if (showInlineVoiceDebug) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            VoiceDebugBox(
+                                lines = state.voiceDebugLines,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp),
+                            )
+                        }
                     }
                 }
-                HoldToResetButton(onReset = onReset)
-            }
-
-            if (!state.presetStatusMessage.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = state.presetStatusMessage,
-                    color = SubtleText,
-                    style = MaterialTheme.typography.bodySmall,
+            } else {
+                ScoreBoard(
+                    scoreA = state.gameState.teamAScore,
+                    scoreB = state.gameState.teamBScore,
+                    teamAName = teamAName,
+                    teamBName = teamBName,
+                    highlightTeam = state.highlightTeam,
+                    isVideoCaptureMode = isVideoCaptureMode,
                 )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TeamControls(
+                        teamName = teamAName,
+                        onAdd = onTeamAAdd,
+                        onMinus = onTeamAMinus,
+                    )
+
+                    TeamControls(
+                        teamName = teamBName,
+                        onAdd = onTeamBAdd,
+                        onMinus = onTeamBMinus,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(26.dp))
+
+                VoiceLoopCard(
+                    isListening = micActive,
+                    lastHeardText = state.lastHeardText,
+                    lastInterpretedText = state.lastInterpretedText,
+                    status = state.voiceLoopStatus,
+                    hint = state.voiceLoopHint,
+                    tone = state.voiceLoopTone,
+                    showDetails = !isVideoCaptureMode,
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                val undoA11y = stringResource(R.string.undo_a11y)
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedButton(
+                        onClick = onUndo,
+                        modifier = Modifier.semantics {
+                            contentDescription = undoA11y
+                        },
+                    ) {
+                        Text(text = stringResource(R.string.undo))
+                    }
+                    if (state.hasSavedPreset) {
+                        OutlinedButton(onClick = onApplyPreset) {
+                            Text(text = stringResource(R.string.load_preset))
+                        }
+                    }
+                    HoldToResetButton(onReset = onReset)
+                }
+
+                if (!state.presetStatusMessage.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = state.presetStatusMessage,
+                        color = SubtleText,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+
+                if (showInlineVoiceDebug) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    VoiceDebugBox(
+                        lines = state.voiceDebugLines,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                    )
+                }
             }
 
         }
@@ -228,21 +367,11 @@ fun GameScreen(
             )
         }
 
-        if (!isVideoCaptureMode) {
-            VoiceDebugBox(
-                lines = state.voiceDebugLines,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-            )
-        }
-
         if (state.winner != null) {
             ConfettiOverlay(
                 winner = state.winner,
-                teamAName = state.gameState.teamAName.ifBlank { stringResource(R.string.team_letter_a) },
-                teamBName = state.gameState.teamBName.ifBlank { stringResource(R.string.team_letter_b) },
+                teamAName = teamAName,
+                teamBName = teamBName,
                 scoreA = state.gameState.teamAScore,
                 scoreB = state.gameState.teamBScore,
                 onTapToReset = onReset,
@@ -323,8 +452,8 @@ private fun TeamControls(
     onAdd: (Int) -> Unit,
     onMinus: () -> Unit,
 ) {
-    val minusDescription = stringResource(
-        R.string.remove_points_team,
+    val minusDescription = pluralStringResource(
+        R.plurals.remove_points_team,
         1,
         teamName,
     )
@@ -350,7 +479,7 @@ private fun TeamControls(
             colors = ButtonDefaults.buttonColors(containerColor = AppSurface),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp)
+                .height(48.dp)
                 .semantics {
                     contentDescription = minusDescription
                 },
@@ -366,8 +495,8 @@ private fun AddScoreButton(
     teamName: String,
     onAdd: (Int) -> Unit,
 ) {
-    val addDescription = stringResource(
-        R.string.add_points_team,
+    val addDescription = pluralStringResource(
+        R.plurals.add_points_team,
         points,
         teamName,
     )
@@ -376,7 +505,7 @@ private fun AddScoreButton(
         onClick = { onAdd(points) },
         colors = ButtonDefaults.buttonColors(containerColor = AppSurface),
         modifier = Modifier
-            .size(width = 56.dp, height = 44.dp)
+            .size(width = 56.dp, height = 48.dp)
             .semantics {
                 contentDescription = addDescription
             },
@@ -395,6 +524,8 @@ private fun VoiceLoopCard(
     tone: VoiceLoopTone,
     showDetails: Boolean,
 ) {
+    val micActive = isListening
+
     val statusColor = when (tone) {
         VoiceLoopTone.READY -> SubtleText
         VoiceLoopTone.SUCCESS -> ScoreHighlight
@@ -416,12 +547,12 @@ private fun VoiceLoopCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Icon(
-                    imageVector = if (isListening) Icons.Rounded.Mic else Icons.Rounded.MicOff,
+                    imageVector = if (micActive) Icons.Rounded.Mic else Icons.Rounded.MicOff,
                     contentDescription = stringResource(R.string.mic_state),
-                    tint = if (isListening) ScoreHighlight else SubtleText,
+                    tint = if (micActive) ScoreHighlight else SubtleText,
                 )
                 Text(
-                    text = if (isListening) stringResource(R.string.listening) else stringResource(R.string.mic_paused),
+                    text = if (micActive) stringResource(R.string.listening) else stringResource(R.string.mic_paused),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
@@ -538,6 +669,7 @@ private fun HoldToResetButton(onReset: () -> Unit) {
 
     Surface(
         modifier = Modifier
+            .heightIn(min = 48.dp)
             .pointerInput(Unit) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false)

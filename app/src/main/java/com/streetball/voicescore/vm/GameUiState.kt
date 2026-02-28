@@ -19,6 +19,7 @@ data class GameUiState(
     val loudMode: Boolean = false,
     val keepScreenAwake: Boolean = true,
     val videoCaptureMode: Boolean = false,
+    val showVoiceDebug: Boolean = true,
     val hasSavedPreset: Boolean = false,
     val presetStatusMessage: String? = null,
     val highlightTeam: Team? = null,

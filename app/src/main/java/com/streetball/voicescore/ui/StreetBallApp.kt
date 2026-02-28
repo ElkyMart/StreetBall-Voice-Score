@@ -7,11 +7,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.streetball.voicescore.ui.theme.StreetBallVoiceScoreTheme
 import com.streetball.voicescore.vm.GameViewModel
@@ -20,7 +20,7 @@ import com.streetball.voicescore.vm.GameViewModel
 fun StreetBallApp(gameViewModel: GameViewModel = viewModel()) {
     val context = LocalContext.current
     val rootView = LocalView.current
-    val uiState by gameViewModel.uiState.collectAsState()
+    val uiState by gameViewModel.uiState.collectAsStateWithLifecycle()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -57,6 +57,7 @@ fun StreetBallApp(gameViewModel: GameViewModel = viewModel()) {
                 loudMode = uiState.loudMode,
                 keepScreenAwake = uiState.keepScreenAwake,
                 videoCaptureMode = uiState.videoCaptureMode,
+                showVoiceDebug = uiState.showVoiceDebug,
                 hasSavedPreset = uiState.hasSavedPreset,
                 presetStatusMessage = uiState.presetStatusMessage,
                 exportDebugMessage = uiState.exportDebugMessage,
@@ -68,6 +69,7 @@ fun StreetBallApp(gameViewModel: GameViewModel = viewModel()) {
                 onLoudModeChanged = gameViewModel::setLoudMode,
                 onKeepScreenAwakeChanged = gameViewModel::setKeepScreenAwake,
                 onVideoCaptureModeChanged = gameViewModel::setVideoCaptureMode,
+                onShowVoiceDebugChanged = gameViewModel::setShowVoiceDebug,
                 onSavePreset = gameViewModel::saveCurrentAsPreset,
                 onLoadPreset = gameViewModel::applySavedPreset,
                 onExportDebugTimeline = gameViewModel::exportDebugTimelineFiles,
@@ -83,6 +85,8 @@ fun StreetBallApp(gameViewModel: GameViewModel = viewModel()) {
                 onReset = gameViewModel::resetGame,
                 onApplyPreset = gameViewModel::applySavedPreset,
                 isVideoCaptureMode = uiState.videoCaptureMode,
+                showVoiceDebug = uiState.showVoiceDebug,
+                onToggleVoiceDebug = gameViewModel::setShowVoiceDebug,
                 onOpenSettings = gameViewModel::openSettings,
                 onRequestMicPermission = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
             )

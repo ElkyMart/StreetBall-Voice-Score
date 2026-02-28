@@ -37,6 +37,7 @@ fun SettingsScreen(
     loudMode: Boolean,
     keepScreenAwake: Boolean,
     videoCaptureMode: Boolean,
+    showVoiceDebug: Boolean,
     hasSavedPreset: Boolean,
     presetStatusMessage: String?,
     exportDebugMessage: String?,
@@ -48,6 +49,7 @@ fun SettingsScreen(
     onLoudModeChanged: (Boolean) -> Unit,
     onKeepScreenAwakeChanged: (Boolean) -> Unit,
     onVideoCaptureModeChanged: (Boolean) -> Unit,
+    onShowVoiceDebugChanged: (Boolean) -> Unit,
     onSavePreset: () -> Unit,
     onLoadPreset: () -> Unit,
     onExportDebugTimeline: () -> Unit,
@@ -140,6 +142,12 @@ fun SettingsScreen(
             title = stringResource(R.string.video_capture_mode),
             checked = videoCaptureMode,
             onCheckedChange = onVideoCaptureModeChanged,
+        )
+
+        ToggleRow(
+            title = stringResource(R.string.show_voice_debug),
+            checked = showVoiceDebug,
+            onCheckedChange = onShowVoiceDebugChanged,
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -83,30 +83,31 @@ class VoiceRecognitionManager(
 
                 override fun onEndOfSpeech() {
                     isListeningSessionActive = false
-                    onListeningChanged(false)
+                    // Keep logical listening state stable; automatic restart follows.
                 }
 
                 override fun onError(error: Int) {
                     isListeningSessionActive = false
-                    onListeningChanged(false)
                     onErrorMessage(errorToText(error))
                     if (shouldListen) {
                         startListeningInternal(delayMs = restartDelayForError(error))
+                    } else {
+                        onListeningChanged(false)
                     }
                 }
 
                 override fun onResults(results: Bundle?) {
                     isListeningSessionActive = false
-                    onListeningChanged(false)
                     dispatchResults(results, defaultConfidence = 0.7f)
                     if (shouldListen) {
-                        startListeningInternal(delayMs = 1_000L)
+                        startListeningInternal(delayMs = 1_100L)
+                    } else {
+                        onListeningChanged(false)
                     }
                 }
 
                 override fun onPartialResults(partialResults: Bundle?) {
-                    // Ignore partial hypotheses for command execution; they often contain incomplete fragments.
-                    // Final results are handled in onResults.
+                    // Ignore partial hypotheses for score commits to reduce noise and state churn.
                 }
 
                 override fun onEvent(eventType: Int, params: Bundle?) = Unit
@@ -147,20 +148,21 @@ class VoiceRecognitionManager(
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            // Avoid forcing offline-only engines; some devices fail to emit stable results in that mode.
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, false)
+            // Dictation mode reduces start/stop earcons on many Android speech engines.
             putExtra("android.speech.extra.DICTATION_MODE", true)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 2_400L)
-            // Longer silence windows reduce rapid restart cycles (and device earcon noise).
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2_300L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1_600L)
+            // Slightly longer windows reduce stop/start cycling and audible earcons.
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2_000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1_500L)
         }
     }
 
     private fun restartDelayForError(error: Int): Long {
         return when (error) {
-            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> 450L
+            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> 900L
             SpeechRecognizer.ERROR_NO_MATCH,
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> 1_000L
+            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> 1_800L
 
             else -> 350L
         }

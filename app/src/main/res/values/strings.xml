@@ -10,6 +10,9 @@
     <string name="keep_screen_awake">Keep screen awake</string>
     <string name="video_capture_mode">Video capture mode</string>
     <string name="video_capture_mode_active">VIDEO CAPTURE MODE</string>
+    <string name="show_voice_debug">Show voice debug panel</string>
+    <string name="debug_on">Debug ON</string>
+    <string name="debug_off">Debug OFF</string>
     <string name="team_names">Team Names</string>
     <string name="team_a_name">Team A name</string>
     <string name="team_b_name">Team B name</string>
@@ -25,13 +28,19 @@
     <string name="undo">Undo</string>
     <string name="undo_a11y">Undo last score change</string>
     <string name="reset">Reset</string>
-    <string name="hold">Hold...</string>
+    <string name="hold">Hold…</string>
     <string name="hold_reset_a11y">Hold two seconds to reset game</string>
 
-    <string name="add_points_team">Add %1$d point(s) to team %2$s</string>
-    <string name="remove_points_team">Remove %1$d point(s) from team %2$s</string>
+    <plurals name="add_points_team">
+        <item quantity="one">Add %1$d point to team %2$s</item>
+        <item quantity="other">Add %1$d points to team %2$s</item>
+    </plurals>
+    <plurals name="remove_points_team">
+        <item quantity="one">Remove %1$d point from team %2$s</item>
+        <item quantity="other">Remove %1$d points from team %2$s</item>
+    </plurals>
 
-    <string name="listening">Listening...</string>
+    <string name="listening">Listening…</string>
     <string name="mic_paused">Mic paused</string>
     <string name="mic_state">Mic State</string>
     <string name="voice_heard_label">Heard</string>

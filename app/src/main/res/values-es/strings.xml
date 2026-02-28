@@ -10,6 +10,9 @@
     <string name="keep_screen_awake">Mantener pantalla activa</string>
     <string name="video_capture_mode">Modo de captura de video</string>
     <string name="video_capture_mode_active">MODO CAPTURA DE VIDEO</string>
+    <string name="show_voice_debug">Mostrar panel de depuración de voz</string>
+    <string name="debug_on">Debug ACT</string>
+    <string name="debug_off">Debug DES</string>
     <string name="team_names">Nombres de equipos</string>
     <string name="team_a_name">Nombre del equipo A</string>
     <string name="team_b_name">Nombre del equipo B</string>
@@ -25,13 +28,21 @@
     <string name="undo">Deshacer</string>
     <string name="undo_a11y">Deshacer el último cambio de puntaje</string>
     <string name="reset">Reiniciar</string>
-    <string name="hold">Mantener...</string>
+    <string name="hold">Mantener…</string>
     <string name="hold_reset_a11y">Mantén presionado dos segundos para reiniciar el juego</string>
 
-    <string name="add_points_team">Sumar %1$d punto(s) al equipo %2$s</string>
-    <string name="remove_points_team">Restar %1$d punto(s) al equipo %2$s</string>
+    <plurals name="add_points_team">
+        <item quantity="one">Sumar %1$d punto al equipo %2$s</item>
+        <item quantity="many">Sumar %1$d puntos al equipo %2$s</item>
+        <item quantity="other">Sumar %1$d puntos al equipo %2$s</item>
+    </plurals>
+    <plurals name="remove_points_team">
+        <item quantity="one">Restar %1$d punto al equipo %2$s</item>
+        <item quantity="many">Restar %1$d puntos al equipo %2$s</item>
+        <item quantity="other">Restar %1$d puntos al equipo %2$s</item>
+    </plurals>
 
-    <string name="listening">Escuchando...</string>
+    <string name="listening">Escuchando…</string>
     <string name="mic_paused">Micrófono en pausa</string>
     <string name="mic_state">Estado del micrófono</string>
     <string name="voice_heard_label">Escuchado</string>

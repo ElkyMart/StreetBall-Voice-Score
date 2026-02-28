@@ -117,6 +117,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 loudMode = restoredConfig.loudMode,
                 keepScreenAwake = restoredConfig.keepScreenAwake,
                 videoCaptureMode = restoredConfig.videoCaptureMode,
+                showVoiceDebug = restoredConfig.showVoiceDebug,
             )
             next
         }
@@ -180,6 +181,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         updateUiStateAndPersist { it.copy(videoCaptureMode = enabled) }
     }
 
+    fun setShowVoiceDebug(enabled: Boolean) {
+        updateUiStateAndPersist { it.copy(showVoiceDebug = enabled) }
+    }
+
     fun setTeamAName(name: String) {
         setTeamName(team = Team.A, rawName = name)
     }
@@ -200,6 +205,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             .putBoolean(KEY_PRESET_LOUD_MODE, currentState.loudMode)
             .putBoolean(KEY_PRESET_KEEP_SCREEN_AWAKE, currentState.keepScreenAwake)
             .putBoolean(KEY_PRESET_VIDEO_CAPTURE_MODE, currentState.videoCaptureMode)
+            .putBoolean(KEY_PRESET_SHOW_VOICE_DEBUG, currentState.showVoiceDebug)
             .apply()
 
         _uiState.update {
@@ -239,6 +245,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 loudMode = preset.loudMode,
                 keepScreenAwake = preset.keepScreenAwake,
                 videoCaptureMode = preset.videoCaptureMode,
+                showVoiceDebug = preset.showVoiceDebug,
                 hasSavedPreset = true,
                 winner = null,
                 gamePointTeam = null,
@@ -483,13 +490,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val now = SystemClock.elapsedRealtime()
-        if (now - lastVoiceEventTimeMs < 700L) {
+        if (now - lastVoiceEventTimeMs < 500L) {
             appendVoiceDebugLine("ignored: pacing guard")
             return
         }
         lastVoiceEventTimeMs = now
 
-        val confidenceThreshold = 0.55f
+        val confidenceThreshold = 0.35f
         if (confidence < confidenceThreshold) {
             appendVoiceDebugLine(
                 "ignored: low confidence (< ${formatConfidence(confidenceThreshold)})",
@@ -752,8 +759,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun onVoiceError(message: String) {
         appendVoiceDebugLine("recognizer: $message")
-        // Ignore noisy no-match type errors to avoid spamming the UI.
-        if (message == "No speech match" || message == "Speech timeout") return
+        if (message == "No speech match" || message == "Speech timeout") {
+            updateSoftVoiceLoopStatus(
+                status = "Listening...",
+                hint = "Say both scores, e.g. two one.",
+                tone = VoiceLoopTone.READY,
+                dedupeKey = "recognizer_idle_$message",
+            )
+            return
+        }
         _uiState.update {
             it.copy(
                 lastError = message,
@@ -1176,6 +1190,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             .putBoolean(KEY_LAST_LOUD_MODE, state.loudMode)
             .putBoolean(KEY_LAST_KEEP_SCREEN_AWAKE, state.keepScreenAwake)
             .putBoolean(KEY_LAST_VIDEO_CAPTURE_MODE, state.videoCaptureMode)
+            .putBoolean(KEY_LAST_SHOW_VOICE_DEBUG, state.showVoiceDebug)
             .apply()
     }
 
@@ -1193,6 +1208,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             loudMode = prefs.getBoolean(KEY_LAST_LOUD_MODE, false),
             keepScreenAwake = prefs.getBoolean(KEY_LAST_KEEP_SCREEN_AWAKE, true),
             videoCaptureMode = prefs.getBoolean(KEY_LAST_VIDEO_CAPTURE_MODE, false),
+            showVoiceDebug = prefs.getBoolean(KEY_LAST_SHOW_VOICE_DEBUG, true),
         )
     }
 
@@ -1210,6 +1226,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             loudMode = prefs.getBoolean(KEY_PRESET_LOUD_MODE, false),
             keepScreenAwake = prefs.getBoolean(KEY_PRESET_KEEP_SCREEN_AWAKE, true),
             videoCaptureMode = prefs.getBoolean(KEY_PRESET_VIDEO_CAPTURE_MODE, false),
+            showVoiceDebug = prefs.getBoolean(KEY_PRESET_SHOW_VOICE_DEBUG, true),
         )
     }
 
@@ -1245,6 +1262,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val loudMode: Boolean,
         val keepScreenAwake: Boolean,
         val videoCaptureMode: Boolean,
+        val showVoiceDebug: Boolean,
     )
 
     companion object {
@@ -1257,6 +1275,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         private const val KEY_PRESET_LOUD_MODE = "preset.loud_mode"
         private const val KEY_PRESET_KEEP_SCREEN_AWAKE = "preset.keep_screen_awake"
         private const val KEY_PRESET_VIDEO_CAPTURE_MODE = "preset.video_capture_mode"
+        private const val KEY_PRESET_SHOW_VOICE_DEBUG = "preset.show_voice_debug"
         private const val KEY_LAST_CONFIG_SAVED = "last.saved"
         private const val KEY_LAST_TEAM_A = "last.team_a"
         private const val KEY_LAST_TEAM_B = "last.team_b"
@@ -1265,5 +1284,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         private const val KEY_LAST_LOUD_MODE = "last.loud_mode"
         private const val KEY_LAST_KEEP_SCREEN_AWAKE = "last.keep_screen_awake"
         private const val KEY_LAST_VIDEO_CAPTURE_MODE = "last.video_capture_mode"
+        private const val KEY_LAST_SHOW_VOICE_DEBUG = "last.show_voice_debug"
     }
 }
