@@ -14,13 +14,15 @@ object DeviceFeedback {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
             val vibrator = manager?.defaultVibrator
-            vibrator?.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
+            if (vibrator == null || !vibrator.hasVibrator()) return
+            vibrator.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
             return
         }
 
         @Suppress("DEPRECATION")
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        if (vibrator == null || !vibrator.hasVibrator()) return
         @Suppress("DEPRECATION")
-        vibrator?.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
+        vibrator.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 }
