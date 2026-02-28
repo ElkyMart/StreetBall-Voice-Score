@@ -6,10 +6,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.streetball.voicescore.ui.theme.StreetBallVoiceScoreTheme
 import com.streetball.voicescore.vm.GameViewModel
@@ -17,7 +17,7 @@ import com.streetball.voicescore.vm.GameViewModel
 @Composable
 fun StreetBallApp(gameViewModel: GameViewModel = viewModel()) {
     val context = LocalContext.current
-    val uiState by gameViewModel.uiState.collectAsState()
+    val uiState by gameViewModel.uiState.collectAsStateWithLifecycle()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),

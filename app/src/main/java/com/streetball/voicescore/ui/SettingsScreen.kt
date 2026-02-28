@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,7 +46,7 @@ fun SettingsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.Rounded.ArrowBack, contentDescription = "Back")
+                Icon(imageVector = Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
             }
             Text(
                 text = "Settings",
