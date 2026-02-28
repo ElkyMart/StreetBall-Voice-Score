@@ -31,8 +31,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         private const val VOICE_DEBOUNCE_MS = 3_000L
         private const val SCORE_HIGHLIGHT_MS = 700L
         private const val INVALID_FLASH_MS = 180L
+        private const val MAX_HISTORY_EVENTS = 500
     }
-
     private val parser = NumberWordParser()
     private val validationEngine = ScoreValidationEngine()
 
@@ -278,7 +278,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             teamAScore = newScoreA,
             teamBScore = newScoreB,
             lastUpdateSource = source,
-            history = oldState.history + event,
+            history = (oldState.history + event).takeLast(MAX_HISTORY_EVENTS),
         )
 
         val (resolvedState, winner, gamePointTeam) = resolveGameMeta(updated)
