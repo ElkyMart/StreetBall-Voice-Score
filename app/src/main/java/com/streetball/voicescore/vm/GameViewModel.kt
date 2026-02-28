@@ -3,6 +3,8 @@ package com.streetball.voicescore.vm
 import android.app.Application
 import android.os.SystemClock
 import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.LANG_MISSING_DATA
+import android.speech.tts.TextToSpeech.LANG_NOT_SUPPORTED
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.streetball.voicescore.model.GameState
@@ -24,7 +26,13 @@ import java.util.Locale
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val maxHistoryEvents = 500
+    companion object {
+        private const val VOICE_CONFIDENCE_THRESHOLD = 0.55f
+        private const val VOICE_DEBOUNCE_MS = 3_000L
+        private const val SCORE_HIGHLIGHT_MS = 700L
+        private const val INVALID_FLASH_MS = 180L
+        private const val MAX_HISTORY_EVENTS = 500
+    }
     private val parser = NumberWordParser()
     private val validationEngine = ScoreValidationEngine()
 
@@ -51,9 +59,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     init {
         textToSpeech = TextToSpeech(getApplication()) { status ->
             ttsReady = status == TextToSpeech.SUCCESS
-            if (ttsReady) {
-                textToSpeech?.language = Locale.US
+            if (!ttsReady) {
+                _uiState.update { it.copy(ttsAvailable = false) }
+                return@TextToSpeech
             }
+
+            val result = textToSpeech?.setLanguage(Locale.US) ?: LANG_NOT_SUPPORTED
+            val languageReady = result != LANG_MISSING_DATA && result != LANG_NOT_SUPPORTED
+            ttsReady = languageReady
+            _uiState.update { it.copy(ttsAvailable = languageReady) }
         }
     }
 
@@ -213,8 +227,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         if (!stateSnapshot.micPermissionGranted || !gameState.gameActive) return
 
-        val confidenceThreshold = 0.55f
-        if (confidence < confidenceThreshold) return
+        if (confidence < VOICE_CONFIDENCE_THRESHOLD) return
 
         val parsedScores = parser.extractTwoScores(text) ?: return
         val (newScoreA, newScoreB) = parsedScores
@@ -223,7 +236,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (newScoreA == gameState.teamAScore && newScoreB == gameState.teamBScore) return
 
         val now = SystemClock.elapsedRealtime()
-        if (lastAcceptedVoiceScore == parsedScores && now - lastAcceptedVoiceTimeMs < 3_000L) {
+        if (lastAcceptedVoiceScore == parsedScores && now - lastAcceptedVoiceTimeMs < VOICE_DEBOUNCE_MS) {
             return
         }
 
@@ -265,7 +278,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             teamAScore = newScoreA,
             teamBScore = newScoreB,
             lastUpdateSource = source,
-            history = (oldState.history + event).takeLast(maxHistoryEvents),
+            history = (oldState.history + event).takeLast(MAX_HISTORY_EVENTS),
         )
 
         val (resolvedState, winner, gamePointTeam) = resolveGameMeta(updated)
@@ -308,7 +321,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (team == null) return
 
         highlightJob = viewModelScope.launch {
-            delay(700L)
+            delay(SCORE_HIGHLIGHT_MS)
             _uiState.update { current ->
                 if (current.highlightTeam == team) {
                     current.copy(highlightTeam = null)
@@ -329,7 +342,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                     lastError = reason,
                 )
             }
-            delay(180L)
+            delay(INVALID_FLASH_MS)
             _uiState.update { it.copy(invalidFlash = false) }
         }
     }
@@ -363,11 +376,39 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val tts = textToSpeech ?: return
         if (!ttsReady) return
         tts.speak(
-            "$scoreA to $scoreB",
+            "${scoreToSpeechWord(scoreA)} to ${scoreToSpeechWord(scoreB)}.",
             TextToSpeech.QUEUE_FLUSH,
             null,
             "score_update",
         )
+    }
+
+    private fun scoreToSpeechWord(score: Int): String {
+        return when (score) {
+            0 -> "zero"
+            1 -> "one"
+            2 -> "two"
+            3 -> "three"
+            4 -> "four"
+            5 -> "five"
+            6 -> "six"
+            7 -> "seven"
+            8 -> "eight"
+            9 -> "nine"
+            10 -> "ten"
+            11 -> "eleven"
+            12 -> "twelve"
+            13 -> "thirteen"
+            14 -> "fourteen"
+            15 -> "fifteen"
+            16 -> "sixteen"
+            17 -> "seventeen"
+            18 -> "eighteen"
+            19 -> "nineteen"
+            20 -> "twenty"
+            21 -> "twenty one"
+            else -> score.toString()
+        }
     }
 
     override fun onCleared() {

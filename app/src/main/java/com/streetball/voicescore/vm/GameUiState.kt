@@ -10,6 +10,7 @@ data class GameUiState(
     val isListening: Boolean = false,
     val showSettings: Boolean = false,
     val loudMode: Boolean = false,
+    val ttsAvailable: Boolean = true,
     val highlightTeam: Team? = null,
     val gamePointTeam: Team? = null,
     val winner: Team? = null,

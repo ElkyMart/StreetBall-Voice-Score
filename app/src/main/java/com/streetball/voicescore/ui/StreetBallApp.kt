@@ -44,6 +44,7 @@ fun StreetBallApp(gameViewModel: GameViewModel = viewModel()) {
                 winByTwo = uiState.gameState.winByTwo,
                 threePointMode = uiState.gameState.threePointMode,
                 loudMode = uiState.loudMode,
+                ttsAvailable = uiState.ttsAvailable,
                 onBack = gameViewModel::closeSettings,
                 onTargetScoreSelected = gameViewModel::setTargetScore,
                 onWinByTwoChanged = gameViewModel::setWinByTwo,
