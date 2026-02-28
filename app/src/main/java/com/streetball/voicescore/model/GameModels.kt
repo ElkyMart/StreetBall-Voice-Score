@@ -22,9 +22,10 @@ data class ScoreEvent(
 data class GameState(
     val teamAScore: Int = 0,
     val teamBScore: Int = 0,
+    val teamAName: String = "A",
+    val teamBName: String = "B",
     val targetScore: Int = 21,
     val winByTwo: Boolean = true,
-    val threePointMode: Boolean = false,
     val gameActive: Boolean = true,
     val lastUpdateSource: UpdateSource = UpdateSource.MANUAL,
     val history: List<ScoreEvent> = emptyList(),

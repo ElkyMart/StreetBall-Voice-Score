@@ -1,26 +1,26 @@
 package com.streetball.voicescore.util
 
-import android.content.Context
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
+import android.media.AudioManager
+import android.media.ToneGenerator
 
 object DeviceFeedback {
 
-    fun vibrateShort(context: Context) {
-        val durationMs = 80L
+    private val toneLock = Any()
+    private var toneGenerator: ToneGenerator? = null
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            val vibrator = manager?.defaultVibrator
-            vibrator?.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
-            return
+    fun playScoreAcceptedBeep() {
+        synchronized(toneLock) {
+            val tone = toneGenerator ?: ToneGenerator(AudioManager.STREAM_MUSIC, 65).also {
+                toneGenerator = it
+            }
+            tone.startTone(ToneGenerator.TONE_PROP_ACK, 110)
         }
+    }
 
-        @Suppress("DEPRECATION")
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-        @Suppress("DEPRECATION")
-        vibrator?.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
+    fun release() {
+        synchronized(toneLock) {
+            toneGenerator?.release()
+            toneGenerator = null
+        }
     }
 }

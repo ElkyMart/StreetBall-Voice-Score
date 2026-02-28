@@ -1,5 +1,6 @@
 package com.streetball.voicescore.ui
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -15,12 +16,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.MicOff
@@ -43,10 +47,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.streetball.voicescore.R
 import com.streetball.voicescore.model.Team
 import com.streetball.voicescore.ui.theme.AppBackground
 import com.streetball.voicescore.ui.theme.AppSurface
@@ -54,20 +64,32 @@ import com.streetball.voicescore.ui.theme.ScoreHighlight
 import com.streetball.voicescore.ui.theme.SubtleText
 import com.streetball.voicescore.ui.theme.WarningRed
 import com.streetball.voicescore.vm.GameUiState
+import com.streetball.voicescore.vm.VoiceLoopTone
 import kotlinx.coroutines.delay
 
 @Composable
 fun GameScreen(
     state: GameUiState,
-    onTeamAPlus: () -> Unit,
+    onTeamAAdd: (Int) -> Unit,
     onTeamAMinus: () -> Unit,
-    onTeamBPlus: () -> Unit,
+    onTeamBAdd: (Int) -> Unit,
     onTeamBMinus: () -> Unit,
     onUndo: () -> Unit,
     onReset: () -> Unit,
+    onApplyPreset: () -> Unit,
+    isVideoCaptureMode: Boolean,
+    showVoiceDebug: Boolean,
+    onToggleVoiceDebug: (Boolean) -> Unit,
     onOpenSettings: () -> Unit,
     onRequestMicPermission: () -> Unit,
 ) {
+    val contentScrollState = rememberScrollState()
+    val showInlineVoiceDebug = showVoiceDebug && !isVideoCaptureMode
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val teamAName = state.gameState.teamAName.ifBlank { stringResource(R.string.team_letter_a) }
+    val teamBName = state.gameState.teamBName.ifBlank { stringResource(R.string.team_letter_b) }
+    val micActive = state.isListening || (state.micPermissionGranted && state.gameState.gameActive)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -75,85 +97,241 @@ fun GameScreen(
             .padding(16.dp),
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(contentScrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                OutlinedButton(onClick = { onToggleVoiceDebug(!showVoiceDebug) }) {
+                    Text(
+                        text = if (showVoiceDebug) {
+                            stringResource(R.string.debug_on)
+                        } else {
+                            stringResource(R.string.debug_off)
+                        },
+                    )
+                }
                 IconButton(onClick = onOpenSettings) {
                     Icon(
                         imageVector = Icons.Rounded.Settings,
-                        contentDescription = "Settings",
+                        contentDescription = stringResource(R.string.settings_icon),
                         tint = Color.White,
                     )
                 }
             }
 
             if (state.gamePointTeam != null && state.winner == null) {
-                val teamLabel = if (state.gamePointTeam == Team.A) "TEAM A" else "TEAM B"
+                val teamLabel = if (state.gamePointTeam == Team.A) {
+                    state.gameState.teamAName.ifBlank { stringResource(R.string.team_letter_a) }
+                } else {
+                    state.gameState.teamBName.ifBlank { stringResource(R.string.team_letter_b) }
+                }
                 Text(
-                    text = "GAME POINT · $teamLabel",
+                    text = stringResource(R.string.game_point_team, teamLabel),
                     color = SubtleText,
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
+            if (isVideoCaptureMode) {
+                Text(
+                    text = stringResource(R.string.video_capture_mode_active),
+                    color = ScoreHighlight,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            ScoreBoard(
-                scoreA = state.gameState.teamAScore,
-                scoreB = state.gameState.teamBScore,
-                highlightTeam = state.highlightTeam,
-            )
+            if (isLandscape) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        ScoreBoard(
+                            scoreA = state.gameState.teamAScore,
+                            scoreB = state.gameState.teamBScore,
+                            teamAName = teamAName,
+                            teamBName = teamBName,
+                            highlightTeam = state.highlightTeam,
+                            isVideoCaptureMode = isVideoCaptureMode,
+                        )
 
-            Spacer(modifier = Modifier.height(28.dp))
+                        Spacer(modifier = Modifier.height(22.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TeamControls(
-                    teamLabel = "A",
-                    onPlus = onTeamAPlus,
-                    onMinus = onTeamAMinus,
-                )
+                        VoiceLoopCard(
+                            isListening = micActive,
+                            lastHeardText = state.lastHeardText,
+                            lastInterpretedText = state.lastInterpretedText,
+                            status = state.voiceLoopStatus,
+                            hint = state.voiceLoopHint,
+                            tone = state.voiceLoopTone,
+                            showDetails = !isVideoCaptureMode,
+                        )
+                    }
 
-                TeamControls(
-                    teamLabel = "B",
-                    onPlus = onTeamBPlus,
-                    onMinus = onTeamBMinus,
-                )
-            }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            TeamControls(
+                                teamName = teamAName,
+                                onAdd = onTeamAAdd,
+                                onMinus = onTeamAMinus,
+                            )
 
-            Spacer(modifier = Modifier.height(26.dp))
+                            TeamControls(
+                                teamName = teamBName,
+                                onAdd = onTeamBAdd,
+                                onMinus = onTeamBMinus,
+                            )
+                        }
 
-            ListeningIndicator(isListening = state.isListening)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        val undoA11y = stringResource(R.string.undo_a11y)
 
-            Spacer(modifier = Modifier.height(18.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            OutlinedButton(
+                                onClick = onUndo,
+                                modifier = Modifier.semantics {
+                                    contentDescription = undoA11y
+                                },
+                            ) {
+                                Text(text = stringResource(R.string.undo))
+                            }
+                            if (state.hasSavedPreset) {
+                                OutlinedButton(onClick = onApplyPreset) {
+                                    Text(text = stringResource(R.string.load_preset))
+                                }
+                            }
+                            HoldToResetButton(onReset = onReset)
+                        }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedButton(onClick = onUndo) {
-                    Text(text = "Undo")
+                        if (!state.presetStatusMessage.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = state.presetStatusMessage,
+                                color = SubtleText,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+
+                        if (showInlineVoiceDebug) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            VoiceDebugBox(
+                                lines = state.voiceDebugLines,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp),
+                            )
+                        }
+                    }
                 }
-                HoldToResetButton(onReset = onReset)
+            } else {
+                ScoreBoard(
+                    scoreA = state.gameState.teamAScore,
+                    scoreB = state.gameState.teamBScore,
+                    teamAName = teamAName,
+                    teamBName = teamBName,
+                    highlightTeam = state.highlightTeam,
+                    isVideoCaptureMode = isVideoCaptureMode,
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TeamControls(
+                        teamName = teamAName,
+                        onAdd = onTeamAAdd,
+                        onMinus = onTeamAMinus,
+                    )
+
+                    TeamControls(
+                        teamName = teamBName,
+                        onAdd = onTeamBAdd,
+                        onMinus = onTeamBMinus,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(26.dp))
+
+                VoiceLoopCard(
+                    isListening = micActive,
+                    lastHeardText = state.lastHeardText,
+                    lastInterpretedText = state.lastInterpretedText,
+                    status = state.voiceLoopStatus,
+                    hint = state.voiceLoopHint,
+                    tone = state.voiceLoopTone,
+                    showDetails = !isVideoCaptureMode,
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                val undoA11y = stringResource(R.string.undo_a11y)
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedButton(
+                        onClick = onUndo,
+                        modifier = Modifier.semantics {
+                            contentDescription = undoA11y
+                        },
+                    ) {
+                        Text(text = stringResource(R.string.undo))
+                    }
+                    if (state.hasSavedPreset) {
+                        OutlinedButton(onClick = onApplyPreset) {
+                            Text(text = stringResource(R.string.load_preset))
+                        }
+                    }
+                    HoldToResetButton(onReset = onReset)
+                }
+
+                if (!state.presetStatusMessage.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = state.presetStatusMessage,
+                        color = SubtleText,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+
+                if (showInlineVoiceDebug) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    VoiceDebugBox(
+                        lines = state.voiceDebugLines,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                    )
+                }
             }
 
-            if (state.lastError != null) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = state.lastError,
-                    color = SubtleText,
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
-                )
-            }
         }
 
         if (!state.micPermissionGranted && state.permissionDenied) {
@@ -170,12 +348,12 @@ fun GameScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = "Microphone permission is required for voice scoring.",
+                        text = stringResource(R.string.mic_permission_required),
                         textAlign = TextAlign.Center,
                         color = Color.White,
                     )
                     Button(onClick = onRequestMicPermission) {
-                        Text(text = "Allow Microphone")
+                        Text(text = stringResource(R.string.allow_microphone))
                     }
                 }
             }
@@ -192,6 +370,8 @@ fun GameScreen(
         if (state.winner != null) {
             ConfettiOverlay(
                 winner = state.winner,
+                teamAName = teamAName,
+                teamBName = teamBName,
                 scoreA = state.gameState.teamAScore,
                 scoreB = state.gameState.teamBScore,
                 onTapToReset = onReset,
@@ -204,8 +384,14 @@ fun GameScreen(
 private fun ScoreBoard(
     scoreA: Int,
     scoreB: Int,
+    teamAName: String,
+    teamBName: String,
     highlightTeam: Team?,
+    isVideoCaptureMode: Boolean,
 ) {
+    val scoreFontSize = if (isVideoCaptureMode) 108.sp else 88.sp
+    val separatorFontSize = if (isVideoCaptureMode) 84.sp else 72.sp
+
     AnimatedContent(
         targetState = scoreA to scoreB,
         transitionSpec = {
@@ -218,87 +404,258 @@ private fun ScoreBoard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
-            Text(
-                text = scores.first.toString(),
-                color = if (highlightTeam == Team.A) ScoreHighlight else Color.White,
-                fontSize = 88.sp,
-                fontWeight = FontWeight.ExtraBold,
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = teamAName,
+                    color = SubtleText,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Text(
+                    text = scores.first.toString(),
+                    modifier = Modifier.semantics {
+                        contentDescription = "$teamAName ${scores.first}"
+                    },
+                    color = if (highlightTeam == Team.A) ScoreHighlight else Color.White,
+                    fontSize = scoreFontSize,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+            }
             Text(
                 text = "  -  ",
                 color = Color.White,
-                fontSize = 72.sp,
+                fontSize = separatorFontSize,
                 fontWeight = FontWeight.Light,
             )
-            Text(
-                text = scores.second.toString(),
-                color = if (highlightTeam == Team.B) ScoreHighlight else Color.White,
-                fontSize = 88.sp,
-                fontWeight = FontWeight.ExtraBold,
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = teamBName,
+                    color = SubtleText,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Text(
+                    text = scores.second.toString(),
+                    modifier = Modifier.semantics {
+                        contentDescription = "$teamBName ${scores.second}"
+                    },
+                    color = if (highlightTeam == Team.B) ScoreHighlight else Color.White,
+                    fontSize = scoreFontSize,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun TeamControls(
-    teamLabel: String,
-    onPlus: () -> Unit,
+    teamName: String,
+    onAdd: (Int) -> Unit,
     onMinus: () -> Unit,
 ) {
+    val minusDescription = pluralStringResource(
+        R.plurals.remove_points_team,
+        1,
+        teamName,
+    )
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = "Team $teamLabel",
+            text = stringResource(R.string.team_label, teamName),
             color = SubtleText,
             style = MaterialTheme.typography.labelLarge,
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
-                onClick = onPlus,
-                colors = ButtonDefaults.buttonColors(containerColor = AppSurface),
-                modifier = Modifier.size(58.dp),
+            AddScoreButton(points = 1, teamName = teamName, onAdd = onAdd)
+            AddScoreButton(points = 2, teamName = teamName, onAdd = onAdd)
+            AddScoreButton(points = 3, teamName = teamName, onAdd = onAdd)
+        }
+
+        Button(
+            onClick = onMinus,
+            colors = ButtonDefaults.buttonColors(containerColor = AppSurface),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .semantics {
+                    contentDescription = minusDescription
+                },
+        ) {
+            Text(text = "-1")
+        }
+    }
+}
+
+@Composable
+private fun AddScoreButton(
+    points: Int,
+    teamName: String,
+    onAdd: (Int) -> Unit,
+) {
+    val addDescription = pluralStringResource(
+        R.plurals.add_points_team,
+        points,
+        teamName,
+    )
+
+    Button(
+        onClick = { onAdd(points) },
+        colors = ButtonDefaults.buttonColors(containerColor = AppSurface),
+        modifier = Modifier
+            .size(width = 56.dp, height = 48.dp)
+            .semantics {
+                contentDescription = addDescription
+            },
+    ) {
+        Text(text = "+$points")
+    }
+}
+
+@Composable
+private fun VoiceLoopCard(
+    isListening: Boolean,
+    lastHeardText: String?,
+    lastInterpretedText: String?,
+    status: String,
+    hint: String,
+    tone: VoiceLoopTone,
+    showDetails: Boolean,
+) {
+    val micActive = isListening
+
+    val statusColor = when (tone) {
+        VoiceLoopTone.READY -> SubtleText
+        VoiceLoopTone.SUCCESS -> ScoreHighlight
+        VoiceLoopTone.WARNING -> Color(0xFFFFC857)
+        VoiceLoopTone.ERROR -> Color(0xFFFF7F7F)
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = AppSurface,
+        shape = RoundedCornerShape(14.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(text = "+", fontSize = 24.sp)
+                Icon(
+                    imageVector = if (micActive) Icons.Rounded.Mic else Icons.Rounded.MicOff,
+                    contentDescription = stringResource(R.string.mic_state),
+                    tint = if (micActive) ScoreHighlight else SubtleText,
+                )
+                Text(
+                    text = if (micActive) stringResource(R.string.listening) else stringResource(R.string.mic_paused),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                )
             }
 
-            Button(
-                onClick = onMinus,
-                colors = ButtonDefaults.buttonColors(containerColor = AppSurface),
-                modifier = Modifier.size(58.dp),
-            ) {
-                Text(text = "-", fontSize = 24.sp)
+            if (showDetails) {
+                VoiceDetailRow(
+                    label = stringResource(R.string.voice_heard_label),
+                    value = lastHeardText ?: stringResource(R.string.voice_none_value),
+                )
+                VoiceDetailRow(
+                    label = stringResource(R.string.voice_interpreted_label),
+                    value = lastInterpretedText ?: stringResource(R.string.voice_none_value),
+                )
+            }
+
+            Text(
+                text = status,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = statusColor,
+            )
+            Text(
+                text = hint,
+                style = MaterialTheme.typography.bodySmall,
+                color = SubtleText,
+            )
+        }
+    }
+}
+
+@Composable
+private fun VoiceDetailRow(
+    label: String,
+    value: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = SubtleText,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White,
+        )
+    }
+}
+
+@Composable
+private fun VoiceDebugBox(
+    lines: List<String>,
+    modifier: Modifier = Modifier,
+) {
+    val scrollState = rememberScrollState()
+    Surface(
+        modifier = modifier,
+        color = AppSurface.copy(alpha = 0.94f),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 180.dp)
+                .verticalScroll(scrollState)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.voice_debug_title),
+                color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            if (lines.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.voice_debug_empty),
+                    color = SubtleText,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                lines.takeLast(10).forEach { line ->
+                    Text(
+                        text = line,
+                        color = SubtleText,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ListeningIndicator(isListening: Boolean) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            imageVector = if (isListening) Icons.Rounded.Mic else Icons.Rounded.MicOff,
-            contentDescription = "Mic State",
-            tint = if (isListening) ScoreHighlight else SubtleText,
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = if (isListening) "Listening..." else "Mic paused",
-            color = SubtleText,
-            style = MaterialTheme.typography.titleMedium,
-        )
-    }
-}
-
-@Composable
 private fun HoldToResetButton(onReset: () -> Unit) {
     var pressed by remember { mutableStateOf(false) }
+    val holdResetDescription = stringResource(R.string.hold_reset_a11y)
 
     LaunchedEffect(pressed) {
         if (pressed) {
@@ -311,19 +668,24 @@ private fun HoldToResetButton(onReset: () -> Unit) {
     }
 
     Surface(
-        modifier = Modifier.pointerInput(Unit) {
-            awaitEachGesture {
-                awaitFirstDown(requireUnconsumed = false)
-                pressed = true
-                waitForUpOrCancellation()
-                pressed = false
+        modifier = Modifier
+            .heightIn(min = 48.dp)
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    pressed = true
+                    waitForUpOrCancellation()
+                    pressed = false
+                }
             }
-        },
+            .semantics {
+                contentDescription = holdResetDescription
+            },
         color = AppSurface,
         shape = RoundedCornerShape(12.dp),
     ) {
         Text(
-            text = if (pressed) "Hold..." else "Reset",
+            text = if (pressed) stringResource(R.string.hold) else stringResource(R.string.reset),
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
             color = Color.White,
         )
